@@ -22,6 +22,13 @@ class ParserSpec extends FlatSpec with Matchers {
     func.eval(env) should be (3.0 +- tol)
   }
 
+  "A unary negated variable" should "parse correctly" in {
+    val expr = "-x"
+    val func = parse(expr)
+
+    func.eval(env) should be (-3.0 +- tol)
+  }
+
   "A binary sum" should "parse correctly with constants" in {
     val expr = "5.0 + 2.0"
     val func = parse(expr)

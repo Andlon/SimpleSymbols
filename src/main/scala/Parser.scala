@@ -21,10 +21,7 @@ object Parser {
 
     // If the left expression is purely numeric, it is a constant, otherwise it is a variable
     lazy val rightFunc = parseForProduct(rightExpr)
-    val leftFunc = {
-      try { new Constant(leftExpr.toDouble) }
-      catch { case _: NumberFormatException => new Variable(leftExpr) }
-    }
+    val leftFunc = parseUnary(leftExpr)
 
     rightExpr match {
       case "" => leftFunc
@@ -36,4 +33,14 @@ object Parser {
     case -1 => (str, "")
     case n => (str take n, str drop n + 1)
   }
+
+  private def parseUnary(expression: String): Function =
+    try { new Constant(expression.toDouble) }
+    catch { case _: NumberFormatException => {
+      expression.head match {
+        case '-' => new Product(new Constant(-1.0), parseUnary(expression.tail))
+        case _ => new Variable(expression)
+      }
+    }
+    }
 }
