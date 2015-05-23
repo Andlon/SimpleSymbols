@@ -6,3 +6,5 @@ object ExceptionUtils {
 }
 
 class NoSuchVariableException(val variableName: String) extends Exception(ExceptionUtils.noVarMessage(variableName)) {}
+
+class IllegalExpressionException(val message: String) extends Exception(message) {}
