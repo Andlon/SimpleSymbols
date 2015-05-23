@@ -19,9 +19,12 @@ object Parser {
   private def parseForProduct(expression: String): Function = {
     val (leftExpr, rightExpr) = splitBySymbol(expression, '*')
 
-    // Assume only constants for now, can also be variable
-    val leftFunc = new Constant(leftExpr.toDouble)
+    // If the left expression is purely numeric, it is a constant, otherwise it is a variable
     lazy val rightFunc = parseForProduct(rightExpr)
+    val leftFunc = {
+      try { new Constant(leftExpr.toDouble) }
+      catch { case _: NumberFormatException => new Variable(leftExpr) }
+    }
 
     rightExpr match {
       case "" => leftFunc
