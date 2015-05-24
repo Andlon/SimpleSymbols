@@ -2,7 +2,7 @@ package simplesymbols
 package test
 
 import org.scalatest._
-import simplesymbols.functions._
+import simplesymbols.expressions._
 
 class FunctionSpec extends FlatSpec with Matchers {
   private val env = new Environment(Map("x" -> 2.0, "y" -> 3.0))

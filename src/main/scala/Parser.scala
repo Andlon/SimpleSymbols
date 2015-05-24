@@ -1,12 +1,13 @@
 package simplesymbols
 
-import simplesymbols.functions._
+import simplesymbols.expressions._
 
 object Parser {
-  def parse(expression: String): Function =
+
+  def parse(expression: String): Expression =
     parseForSum(expression.filterNot(_.isSpaceChar).replace("-", "+-"))
 
-  private def parseForSum(expression: String): Function = {
+  private def parseForSum(expression: String): Expression = {
     val (leftExpr, rightExpr) = splitBySymbol(expression, '+')
     lazy val leftFunc = parseForProduct(leftExpr)
     lazy val rightFunc = parseForSum(rightExpr)
@@ -17,7 +18,7 @@ object Parser {
     }
   }
 
-  private def parseForProduct(expression: String): Function = {
+  private def parseForProduct(expression: String): Expression = {
     val (leftExpr, rightExpr) = splitBySymbol(expression, '*')
 
     lazy val leftFunc = parseUnary(leftExpr)
@@ -31,7 +32,7 @@ object Parser {
     }
   }
 
-  private def parseUnary(expression: String): Function =
+  private def parseUnary(expression: String): Expression =
     try { new Constant(expression.toDouble) }
     catch { case _: NumberFormatException => {
       expression.head match {
