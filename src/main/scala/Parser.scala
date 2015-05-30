@@ -1,8 +1,41 @@
 package simplesymbols
 
 import simplesymbols.expressions._
+import simplesymbols.tokens._
 
 object Parser {
+  def tokenize(statement: String): Seq[Token] = tokenizePartialStatement(statement, "")
+
+  def precedenceOf(operator: Char) = operator match {
+    case '+' | '-' => 2
+    case '*' | '/' => 3
+    case '^' => 4
+    case _ => throw new UnsupportedOperationException("Unsupported operator " + operator + ".")
+  }
+
+  private def tokenizePartialStatement(statement: String, currentTokenStr: String) : Seq[Token] =
+    statement match {
+      case s if s.isEmpty => Seq()
+      case s if "+-*/^".contains(s.head) =>
+        extractToken(currentTokenStr) ++
+          Seq(LeftAssocOperatorToken(s.head, precedenceOf(s.head))) ++
+          tokenizePartialStatement(s.tail, "")
+      case s if s.head.isSpaceChar => tokenizePartialStatement(s.tail, currentTokenStr)
+      case s => tokenizePartialStatement(s.tail, currentTokenStr + s.head)
+    }
+
+  private lazy val variablePattern = """[A-Za-z][A-Za-z0-9_]*""".r
+  private lazy val numberPattern = """[0-9.]*[0-9]""".r
+
+  def isValidVariableName(tokenStr: String) = variablePattern.pattern.matcher(tokenStr).matches
+  def isValidNumber(tokenStr: String) = numberPattern.pattern.matcher(tokenStr).matches
+
+  private def extractToken(tokenStr: String): Seq[Token] = tokenStr match {
+    case "" => Seq()
+    case s if isValidVariableName(s) => Seq(VariableToken(s))
+    case s if isValidNumber(s) => Seq(NumberToken(s.toDouble)) // Temporarily support only double and ignore error handling
+    case _ => throw new UnsupportedOperationException("TODO: Throw custom exception")
+  }
 
   def parse(expression: String): Expression =
     parseForSum(expression.filterNot(_.isSpaceChar).replace("-", "+-"))
