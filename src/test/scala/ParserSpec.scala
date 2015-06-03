@@ -3,7 +3,7 @@ package test
 
 import org.scalatest._
 import simplesymbols.Parser._
-import simplesymbols.tokens.{RightAssocOperatorToken, LeftAssocOperatorToken, VariableToken, NumberToken}
+import simplesymbols.tokens.{LeftAssocOperatorToken, NumberToken, RightAssocOperatorToken, VariableToken}
 
 class ParserSpec extends FlatSpec with Matchers {
   private val env = new Environment(Map("x" -> 3.0, "y" -> 5.0, "z" -> 7.0))
@@ -132,6 +132,7 @@ class ParserSpec extends FlatSpec with Matchers {
     val input4 = "^"
     val input5 = "/"
     val input6 = "-"
+    val input7 = "5"
 
     tokenize(input0) should equal (Seq(NumberToken(5.0)))
     tokenize(input1) should equal (Seq(VariableToken("myvar")))
@@ -140,5 +141,25 @@ class ParserSpec extends FlatSpec with Matchers {
     tokenize(input4) should equal (Seq(RightAssocOperatorToken('^', 4)))
     tokenize(input5) should equal (Seq(LeftAssocOperatorToken('/', 3)))
     tokenize(input6) should equal (Seq(LeftAssocOperatorToken('-', 2)))
+    tokenize(input7) should equal (Seq(NumberToken(5)))
+  }
+
+  it should "correctly tokenize multi-token expressions" in {
+    tokenize("5.0 + x") should equal (Seq(NumberToken(5.0), LeftAssocOperatorToken('+', 2), VariableToken("x")))
+    tokenize("5.0 * y") should equal (Seq(NumberToken(5.0), LeftAssocOperatorToken('*', 3), VariableToken("y")))
+    tokenize("5.0 ^ x") should equal (Seq(NumberToken(5.0), RightAssocOperatorToken('^', 4), VariableToken("x")))
+    tokenize("1.2 / x_2 + y - 5 * 6 ^ z") should equal (Seq(
+      NumberToken(1.2),
+      LeftAssocOperatorToken('/', 3),
+      VariableToken("x_2"),
+      LeftAssocOperatorToken('+', 2),
+      VariableToken("y"),
+      LeftAssocOperatorToken('-', 2),
+      NumberToken(5),
+      LeftAssocOperatorToken('*', 3),
+      NumberToken(6),
+      RightAssocOperatorToken('^', 4),
+      VariableToken("z")
+    ))
   }
 }
