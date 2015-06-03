@@ -3,6 +3,7 @@ package test
 
 import org.scalatest._
 import simplesymbols.Parser._
+import simplesymbols.tokens.{RightAssocOperatorToken, LeftAssocOperatorToken, VariableToken, NumberToken}
 
 class ParserSpec extends FlatSpec with Matchers {
   private val env = new Environment(Map("x" -> 3.0, "y" -> 5.0, "z" -> 7.0))
@@ -121,5 +122,23 @@ class ParserSpec extends FlatSpec with Matchers {
     val numbers = Seq(".", "", "a", "0a", "a2")
 
     numbers.map(isValidNumber(_)) should equal (Seq(false, false, false, false, false))
+  }
+
+  "Tokenize" should "correctly tokenize single-token expressions" in {
+    val input0 = "5.0"
+    val input1 = "myvar"
+    val input2 = "+"
+    val input3 = "*"
+    val input4 = "^"
+    val input5 = "/"
+    val input6 = "-"
+
+    tokenize(input0) should equal (Seq(NumberToken(5.0)))
+    tokenize(input1) should equal (Seq(VariableToken("myvar")))
+    tokenize(input2) should equal (Seq(LeftAssocOperatorToken('+', 2)))
+    tokenize(input3) should equal (Seq(LeftAssocOperatorToken('*', 3)))
+    tokenize(input4) should equal (Seq(RightAssocOperatorToken('^', 4)))
+    tokenize(input5) should equal (Seq(LeftAssocOperatorToken('/', 3)))
+    tokenize(input6) should equal (Seq(LeftAssocOperatorToken('-', 2)))
   }
 }

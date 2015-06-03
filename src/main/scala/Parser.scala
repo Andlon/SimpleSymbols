@@ -15,10 +15,15 @@ object Parser {
 
   private def tokenizePartialStatement(statement: String, currentTokenStr: String) : Seq[Token] =
     statement match {
-      case s if s.isEmpty => Seq()
-      case s if "+-*/^".contains(s.head) =>
+      case s if s.isEmpty && currentTokenStr.isEmpty => Seq()
+      case s if s.isEmpty => extractToken(currentTokenStr)
+      case s if "+-*/".contains(s.head) =>
         extractToken(currentTokenStr) ++
           Seq(LeftAssocOperatorToken(s.head, precedenceOf(s.head))) ++
+          tokenizePartialStatement(s.tail, "")
+      case s if "^".contains(s.head) =>
+        extractToken(currentTokenStr) ++
+          Seq(RightAssocOperatorToken(s.head, precedenceOf(s.head))) ++
           tokenizePartialStatement(s.tail, "")
       case s if s.head.isSpaceChar => tokenizePartialStatement(s.tail, currentTokenStr)
       case s => tokenizePartialStatement(s.tail, currentTokenStr + s.head)
