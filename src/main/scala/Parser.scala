@@ -3,42 +3,35 @@ package simplesymbols
 import simplesymbols.expressions._
 import simplesymbols.tokens._
 
+import scala.annotation.tailrec
+
 object Parser {
-  def tokenize(statement: String): Seq[Token] = tokenizePartialStatement(statement, "")
+  def tokenize(statement: String): Seq[Token] = tokenizePartialStatement(statement, "", Seq())
 
-  def precedenceOf(operator: Char) = operator match {
-    case '+' | '-' => 2
-    case '*' | '/' => 3
-    case '^' => 4
-    case _ => throw new UnsupportedOperationException("Unsupported operator " + operator + ".")
-  }
-
-  private def tokenizePartialStatement(statement: String, currentTokenStr: String) : Seq[Token] =
+  @tailrec
+  def tokenizePartialStatement(statement: String, currentTokenStr: String, currentSeq: Seq[Token]) : Seq[Token] = {
+    lazy val token = extractToken(currentTokenStr)
     statement match {
-      case s if s.isEmpty && currentTokenStr.isEmpty => Seq()
-      case s if s.isEmpty => extractToken(currentTokenStr)
-      case s if "+-*/".contains(s.head) =>
-        extractToken(currentTokenStr) ++
-          Seq(LeftAssocOperatorToken(s.head, precedenceOf(s.head))) ++
-          tokenizePartialStatement(s.tail, "")
-      case s if "^".contains(s.head) =>
-        extractToken(currentTokenStr) ++
-          Seq(RightAssocOperatorToken(s.head, precedenceOf(s.head))) ++
-          tokenizePartialStatement(s.tail, "")
-      case s if s.head.isSpaceChar => tokenizePartialStatement(s.tail, currentTokenStr)
-      case s => tokenizePartialStatement(s.tail, currentTokenStr + s.head)
+      case s if s.isEmpty => currentSeq ++ token
+      case s if isOperator(s.head.toString) =>
+        tokenizePartialStatement(s.tail, "", currentSeq ++ token ++ extractToken(s.head.toString))
+      case s if s.head.isSpaceChar => tokenizePartialStatement(s.tail, currentTokenStr, currentSeq)
+      case s => tokenizePartialStatement(s.tail, currentTokenStr + s.head, currentSeq)
     }
+  }
 
   private lazy val variablePattern = """[A-Za-z][A-Za-z0-9_]*""".r
   private lazy val numberPattern = """[0-9.]*[0-9]""".r
 
-  def isValidVariableName(tokenStr: String) = variablePattern.pattern.matcher(tokenStr).matches
-  def isValidNumber(tokenStr: String) = numberPattern.pattern.matcher(tokenStr).matches
+  def isVariableName(tokenStr: String) = Tokens.isValidVariableName(tokenStr)
+  def isNumber(tokenStr: String) = Tokens.isValidNumber(tokenStr)
+  def isOperator(tokenStr: String) = Tokens.isValidOperator(tokenStr)
 
-  private def extractToken(tokenStr: String): Seq[Token] = tokenStr match {
-    case "" => Seq()
-    case s if isValidVariableName(s) => Seq(VariableToken(s))
-    case s if isValidNumber(s) => Seq(NumberToken(s.toDouble)) // Temporarily support only double and ignore error handling
+  private def extractToken(tokenStr: String): Option[Token] = tokenStr match {
+    case "" => None
+    case s if Tokens.isValidOperator(tokenStr) => Option(Tokens.operatorFromString(tokenStr))
+    case s if isVariableName(s) => Option(VariableToken(s))
+    case s if isNumber(s) => Option(NumberToken(s.toDouble)) // Temporarily support only double and ignore error handling
     case _ => throw new UnsupportedOperationException("TODO: Throw custom exception")
   }
 
