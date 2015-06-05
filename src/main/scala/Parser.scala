@@ -35,11 +35,11 @@ object Parser {
     }
   }
 
-  def expression(tokens: Seq[Token]): Expression =
+  def assemble(tokens: Seq[Token]): Expression =
     if (!tokens.isEmpty)shuntingYard(tokens, List(), List())
     else throw new UnsupportedOperationException("List of tokens must be non-empty")
 
-  def shuntingYard(remaining: Seq[Token], stack: List[BinaryOperator], output: List[Expression]): Expression =
+  private def shuntingYard(remaining: Seq[Token], stack: List[BinaryOperator], output: List[Expression]): Expression =
     if (!remaining.isEmpty) {
       remaining.head match {
         case op: BinaryOperator if !stack.isEmpty => stack.head match {

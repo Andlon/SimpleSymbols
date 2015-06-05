@@ -3,6 +3,7 @@ package test
 
 import org.scalatest._
 import simplesymbols.Parser._
+import simplesymbols.expressions._
 import simplesymbols.tokens._
 
 class ParserSpec extends FlatSpec with Matchers {
@@ -162,5 +163,33 @@ class ParserSpec extends FlatSpec with Matchers {
       power,
       VariableToken("z")
     ))
+  }
+
+  "Assemble" should "correctly handle single constants" in {
+    assemble(Seq(NumberToken(5.0))) should equal (new Constant(5.0))
+  }
+
+  it should "correctly handle single variables" in {
+    assemble(Seq(VariableToken("x"))) should equal(new Variable("x"))
+  }
+
+  it should "correctly handle binary expressions" in {
+    import Tokens._
+    assemble(Seq(NumberToken(5.0), plus, NumberToken(1.0))) should equal (Sum(Constant(5.0), Constant(1.0)))
+    assemble(Seq(VariableToken("x"), plus, VariableToken("y"))) should equal (Sum(Variable("x"), Variable("y")))
+    assemble(Seq(NumberToken(5.0), times, NumberToken(1.0))) should equal (Product(Constant(5.0), Constant(1.0)))
+    assemble(Seq(VariableToken("x"), minus, NumberToken(1.0))) should equal (
+      Sum(Variable("x"), Product(Constant(-1.0), Constant(1.0)))
+    )
+  }
+
+  it should "handle precedence in infix expressions" in {
+    import Tokens._
+    assemble(Seq(NumberToken(5.0), plus, NumberToken(1.0), times, NumberToken(2.0))) should equal (
+      Sum(Constant(5.0), Product(Constant(1.0), Constant(2.0)))
+    )
+    assemble(Seq(NumberToken(5.0), times, NumberToken(1.0), plus, NumberToken(2.0))) should equal {
+      Sum(Product(Constant(5.0), Constant(1.0)), Constant(2.0))
+    }
   }
 }
