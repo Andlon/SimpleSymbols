@@ -6,9 +6,6 @@ import simplesymbols.tokens._
 import scala.annotation.tailrec
 
 object Parser {
-  private lazy val variablePattern = """[A-Za-z][A-Za-z0-9_]*""".r
-  private lazy val numberPattern = """[0-9.]*[0-9]""".r
-
   def isVariableName(tokenStr: String) = Tokens.isValidVariableName(tokenStr)
   def isNumber(tokenStr: String) = Tokens.isValidNumber(tokenStr)
   def isOperator(tokenStr: String) = Tokens.isValidOperator(tokenStr)
@@ -36,24 +33,23 @@ object Parser {
   }
 
   def assemble(tokens: Seq[Token]): Expression =
-    if (!tokens.isEmpty)shuntingYard(tokens, List(), List())
+    if (tokens.nonEmpty) shuntingYard(tokens, List(), List())
     else throw new UnsupportedOperationException("List of tokens must be non-empty")
 
+  @tailrec
   private def shuntingYard(remaining: Seq[Token], stack: List[BinaryOperator], output: List[Expression]): Expression =
-    if (!remaining.isEmpty) {
-      remaining.head match {
-        case op: BinaryOperator if !stack.isEmpty => stack.head match {
-          case op2: BinaryOperator if op.leftAssociative && op.precedence <= op2.precedence =>
-            shuntingYard(remaining, stack.tail, addOperatorToStack(op2, output))
-          case op2: BinaryOperator if op.rightAssociative && op.precedence > op2.precedence =>
-            shuntingYard(remaining, stack.tail, addOperatorToStack(op2, output))
-          case _ => shuntingYard(remaining.tail, op :: stack, output)
-        }
-        case op: BinaryOperator => shuntingYard(remaining.tail, op :: stack, output)
-        case v: ExpressionValue => shuntingYard(remaining.tail, stack, v.expression :: output)
+    if (remaining.nonEmpty) remaining.head match {
+      case op: BinaryOperator if stack.nonEmpty => stack.head match {
+        case op2: BinaryOperator if op.leftAssociative && op.precedence <= op2.precedence =>
+          shuntingYard(remaining, stack.tail, addOperatorToStack(op2, output))
+        case op2: BinaryOperator if op.rightAssociative && op.precedence > op2.precedence =>
+          shuntingYard(remaining, stack.tail, addOperatorToStack(op2, output))
+        case _ => shuntingYard(remaining.tail, op :: stack, output)
       }
+      case op: BinaryOperator => shuntingYard(remaining.tail, op :: stack, output)
+      case v: ExpressionValue => shuntingYard(remaining.tail, stack, v.expression :: output)
     }
-    else if (!stack.isEmpty) shuntingYard(Seq(), stack.tail, addOperatorToStack(stack.head, output))
+    else if (stack.nonEmpty) shuntingYard(Seq(), stack.tail, addOperatorToStack(stack.head, output))
     else output.head
 
   private def addOperatorToStack(op: BinaryOperator, stack: List[Expression]): List[Expression] = stack.length match {
@@ -62,46 +58,5 @@ object Parser {
     case _ => op.express(Some(stack.tail.head), Some(stack.head)) :: (stack drop 2)
   }
 
-  def parse(expression: String): Expression =
-    parseForSum(expression.filterNot(_.isSpaceChar).replace("-", "+-"))
-
-  private def parseForSum(expression: String): Expression = {
-    val (leftExpr, rightExpr) = splitBySymbol(expression, '+')
-    lazy val leftFunc = parseForProduct(leftExpr)
-    lazy val rightFunc = parseForSum(rightExpr)
-
-    rightExpr match {
-      case "" => leftFunc
-      case _ => new Sum(leftFunc, rightFunc)
-    }
-  }
-
-  private def parseForProduct(expression: String): Expression = {
-    val (leftExpr, rightExpr) = splitBySymbol(expression, '*')
-
-    lazy val leftFunc = parseUnary(leftExpr)
-    lazy val rightFunc = parseForProduct(rightExpr)
-
-    (leftExpr, rightExpr) match {
-      case ("", "") => new Constant(0.0)
-      case ("", _) => rightFunc
-      case (_, "") => leftFunc
-      case (_, _) => new Product(leftFunc, rightFunc)
-    }
-  }
-
-  private def parseUnary(expression: String): Expression =
-    try { new Constant(expression.toDouble) }
-    catch { case _: NumberFormatException => {
-      expression.head match {
-        case '-' => new Product(new Constant(-1.0), new Variable(expression.tail))
-        case _ => new Variable(expression)
-      }
-    }
-    }
-
-  private def splitBySymbol(str: String, symbol: Char) = str.indexOf(symbol) match {
-    case -1 => (str, "")
-    case n => (str take n, str drop n + 1)
-  }
+  def parse(expression: String): Expression = assemble(tokenize(expression))
 }
