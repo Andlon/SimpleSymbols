@@ -13,28 +13,28 @@ abstract class Expression {
   /**
    * Returns a new expression with any variables in environment replaced with constants with values defined by those
    * in environment.
-   * @param env The environment from which to retrieve values of variables.
+   * @param vars The environment from which to retrieve values of variables.
    * @return A new expression where variables from env are replaced with constants.
    */
-  def replace(env: Environment): Expression
+  def replace(vars: Map[String, Expression]): Expression
 }
 
 case class Constant(val constant: Double) extends Expression {
   override def eval(env: Environment) = constant
-  override def replace(env: Environment) = this
+  override def replace(vars: Map[String, Expression]) = this
 }
 
 case class Sum(val left: Expression, val right: Expression) extends Expression {
   override def eval(env: Environment) = left.eval(env) + right.eval(env)
-  override def replace(env: Environment) = new Sum(left replace env, right replace env)
+  override def replace(vars: Map[String, Expression]) = Sum(left replace vars, right replace vars)
 }
 
 case class Product(val left: Expression, val right: Expression) extends Expression {
   override def eval(env: Environment) = left.eval(env) * right.eval(env)
-  override def replace(env: Environment) = new Product(left replace env, right replace env)
+  override def replace(vars: Map[String, Expression]) = Product(left replace vars, right replace vars)
 }
 
 case class Variable(val name: String) extends Expression {
   override def eval(env: Environment) = env.get(name)
-  override def replace(env: Environment) = if (env contains name) new Constant(env get name) else this
+  override def replace(vars: Map[String, Expression]) = vars.getOrElse(name, this)
 }
