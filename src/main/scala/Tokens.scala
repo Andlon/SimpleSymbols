@@ -59,17 +59,24 @@ case class ExponentiationOperatorToken() extends Token with BinaryOperator {
   }
 }
 
+case object DefinitionToken extends Token
+case object EqualityToken extends Token
+
 object Tokens {
   lazy val plus = AdditionOperatorToken()
   lazy val minus = SubtractionOperatorToken()
-  lazy val times = MultiplicationOperatorToken()
-  lazy val divide = DivisionOperatorToken()
-  lazy val power = ExponentiationOperatorToken()
+  lazy val multiplication = MultiplicationOperatorToken()
+  lazy val division = DivisionOperatorToken()
+  lazy val exponentiation = ExponentiationOperatorToken()
+  lazy val definition = DefinitionToken
+  lazy val equality = EqualityToken
+
+  def number(num: Number) = NumberToken(num)
+  def variable(name: String) = VariableToken(name)
 
   private lazy val variablePattern = """[A-Za-z][A-Za-z0-9_]*""".r
   private lazy val numberPattern = """[0-9.]*[0-9]""".r
-  private lazy val operatorStrings: Seq[String] = Seq("+", "-", "*", "/", "^")
-  private lazy val operators: Seq[BinaryOperator] = Seq(plus, minus, times, divide, power)
+  lazy val operatorStrings: Seq[String] = Seq("+", "-", "*", "/", "^", ":=", "=")
 
   def isValidVariableName(tokenStr: String) = variablePattern.pattern.matcher(tokenStr).matches
   def isValidNumber(tokenStr: String) = numberPattern.pattern.matcher(tokenStr).matches
@@ -78,9 +85,11 @@ object Tokens {
   def operatorFromString(str: String): Token = str match {
     case "+" => plus
     case "-" => minus
-    case "*" => times
-    case "/" => divide
-    case "^" => power
+    case "*" => multiplication
+    case "/" => division
+    case "^" => exponentiation
+    case ":=" => definition
+    case "=" => equality
     case s => throw new InvalidToken("'" + s + "' does not correspond to a valid operator token.")
   }
 }

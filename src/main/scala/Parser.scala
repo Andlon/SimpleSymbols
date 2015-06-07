@@ -20,14 +20,19 @@ object Parser {
 
   def tokenize(statement: String): Seq[Token] = tokenizePartialStatement(statement, "", Seq())
 
+  // A sorted list of operator strings, sorted by length in descending order.
+  // This way, longer operators such as ":=" are matched before shorter operators with common characters (e.g. "=")
+  private lazy val operators = Tokens.operatorStrings.sortWith(_.length > _.length)
+
   @tailrec
   private def tokenizePartialStatement(statement: String, currentTokenStr: String, currentSeq: Seq[Token]) : Seq[Token] = {
     lazy val token = extractToken(currentTokenStr)
+    lazy val firstOp = operators.collectFirst({ case op if statement.startsWith(op) => op })
     statement match {
-      case s if s.isEmpty => currentSeq ++ token
-      case s if isOperator(s.head.toString) =>
-        tokenizePartialStatement(s.tail, "", currentSeq ++ token ++ extractToken(s.head.toString))
+      case "" => currentSeq ++ token
       case s if s.head.isSpaceChar => tokenizePartialStatement(s.tail, currentTokenStr, currentSeq)
+      case s if firstOp.isDefined =>
+        tokenizePartialStatement(s drop firstOp.get.size, "", currentSeq ++ token ++ extractToken(firstOp.get))
       case s => tokenizePartialStatement(s.tail, currentTokenStr + s.head, currentSeq)
     }
   }
