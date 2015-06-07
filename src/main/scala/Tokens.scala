@@ -14,7 +14,7 @@ case class VariableToken(name: String) extends Token with ExpressionValue {
   override lazy val expression = new Variable(name)
 }
 
-case class AdditionOperatorToken() extends Token with BinaryOperator {
+case object AdditionOperatorToken extends Token with BinaryOperator {
   override val associativity: Associativity = LeftAssociative()
   override val precedence = 2
   override def express(left: Option[Expression], right: Option[Expression]) = (left, right) match {
@@ -24,7 +24,7 @@ case class AdditionOperatorToken() extends Token with BinaryOperator {
   }
 }
 
-case class SubtractionOperatorToken() extends Token with BinaryOperator {
+case object SubtractionOperatorToken extends Token with BinaryOperator {
   override val associativity = LeftAssociative()
   override val precedence = 2
   override def express(left: Option[Expression], right: Option[Expression]) = (left, right) match {
@@ -34,7 +34,7 @@ case class SubtractionOperatorToken() extends Token with BinaryOperator {
   }
 }
 
-case class MultiplicationOperatorToken() extends Token with BinaryOperator {
+case object MultiplicationOperatorToken extends Token with BinaryOperator {
   override val associativity = LeftAssociative()
   override val precedence = 3
   override def express(left: Option[Expression], right: Option[Expression]) = (left, right) match {
@@ -43,7 +43,7 @@ case class MultiplicationOperatorToken() extends Token with BinaryOperator {
   }
 }
 
-case class DivisionOperatorToken() extends Token with BinaryOperator {
+case object DivisionOperatorToken extends Token with BinaryOperator {
   override val associativity = LeftAssociative()
   override val precedence = 3
   override def express(left: Option[Expression], right: Option[Expression]) = (left, right) match {
@@ -51,7 +51,7 @@ case class DivisionOperatorToken() extends Token with BinaryOperator {
   }
 }
 
-case class ExponentiationOperatorToken() extends Token with BinaryOperator {
+case object ExponentiationOperatorToken extends Token with BinaryOperator {
   override val associativity = RightAssociative()
   override val precedence = 4
   override def express(left: Option[Expression], right: Option[Expression]) = (left, right) match {
@@ -63,13 +63,13 @@ case object DefinitionToken extends Token
 case object EqualityToken extends Token
 
 object Tokens {
-  lazy val plus = AdditionOperatorToken()
-  lazy val minus = SubtractionOperatorToken()
-  lazy val multiplication = MultiplicationOperatorToken()
-  lazy val division = DivisionOperatorToken()
-  lazy val exponentiation = ExponentiationOperatorToken()
-  lazy val definition = DefinitionToken
-  lazy val equality = EqualityToken
+  val plus = AdditionOperatorToken
+  val minus = SubtractionOperatorToken
+  val multiplication = MultiplicationOperatorToken
+  val division = DivisionOperatorToken
+  val exponentiation = ExponentiationOperatorToken
+  val definition = DefinitionToken
+  val equality = EqualityToken
 
   def number(num: Number) = NumberToken(num)
   def variable(name: String) = VariableToken(name)

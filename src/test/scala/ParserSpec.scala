@@ -126,75 +126,58 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   "Tokenize" should "correctly tokenize single-token expressions" in {
-    val input0 = "5.0"
-    val input1 = "myvar"
-    val input2 = "+"
-    val input3 = "*"
-    val input4 = "^"
-    val input5 = "/"
-    val input6 = "-"
-    val input7 = "5"
-
     import Tokens._
-    tokenize(input0) should equal (Seq(NumberToken(5.0)))
-    tokenize(input1) should equal (Seq(VariableToken("myvar")))
-    tokenize(input2) should equal (Seq(Tokens.plus))
-    tokenize(input3) should equal (Seq(Tokens.multiplication))
-    tokenize(input4) should equal (Seq(Tokens.exponentiation))
-    tokenize(input5) should equal (Seq(Tokens.division))
-    tokenize(input6) should equal (Seq(Tokens.minus))
-    tokenize(input7) should equal (Seq(NumberToken(5)))
+    tokenize("5.0") should equal (number(5.0) :: Nil)
+    tokenize("var") should equal (variable("var") :: Nil)
+    tokenize("+") should equal (plus :: Nil)
+    tokenize("*") should equal (multiplication :: Nil)
+    tokenize("^") should equal (exponentiation :: Nil)
+    tokenize("/") should equal (division :: Nil)
+    tokenize("-") should equal (minus :: Nil)
+    tokenize("5") should equal (number(5) :: Nil)
     tokenize("=") should equal (equality :: Nil)
     tokenize(":=") should equal (definition :: Nil)
   }
 
   it should "correctly tokenize multi-token expressions" in {
     import Tokens._
-    tokenize("5.0 + x") should equal (Seq(NumberToken(5.0), plus, VariableToken("x")))
-    tokenize("5.0 * y") should equal (Seq(NumberToken(5.0), multiplication, VariableToken("y")))
-    tokenize("5.0 ^ x") should equal (Seq(NumberToken(5.0), exponentiation, VariableToken("x")))
-    tokenize("1.2 / x_2 + y - 5 * 6 ^ z") should equal (Seq(
-      NumberToken(1.2),
-      division,
-      VariableToken("x_2"),
-      plus,
-      VariableToken("y"),
-      minus,
-      NumberToken(5),
-      multiplication,
-      NumberToken(6),
-      exponentiation,
-      VariableToken("z")
-    ))
-
+    tokenize("5.0 + x") should equal (number(5.0) :: plus :: variable("x") :: Nil)
+    tokenize("5.0 * y") should equal (number(5.0) :: multiplication :: variable("y") :: Nil)
+    tokenize("5.0 ^ x") should equal (number(5.0) :: exponentiation :: variable("x") :: Nil)
     tokenize("x := 5.0") should equal (variable("x") :: definition :: number(5.0) :: Nil)
     tokenize("x = 5.0") should equal (variable("x") :: equality :: number(5.0) :: Nil)
+    tokenize("f := 1.2 / x_2 + y - 5 * 6 ^ z = a") should equal (
+      variable("f") :: definition :: number(1.2) :: division :: variable("x_2") :: plus :: variable("y") :: minus ::
+        number(5) :: multiplication :: number(6) :: exponentiation :: variable("z") :: equality :: variable("a") :: Nil
+    )
   }
 
   "Assemble" should "correctly handle single constants" in {
-    assemble(Seq(NumberToken(5.0))) should equal (new Constant(5.0))
+    import Tokens._
+    assemble(number(5.0) :: Nil) should equal (Constant(5.0))
   }
 
   it should "correctly handle single variables" in {
-    assemble(Seq(VariableToken("x"))) should equal(new Variable("x"))
+    import Tokens._
+    assemble(variable("x") :: Nil) should equal(Variable("x"))
   }
 
   it should "correctly handle binary expressions" in {
     import Tokens._
-    assemble(Seq(NumberToken(5.0), plus, NumberToken(1.0))) should equal (Sum(Constant(5.0), Constant(1.0)))
-    assemble(Seq(VariableToken("x"), plus, VariableToken("y"))) should equal (Sum(Variable("x"), Variable("y")))
-    assemble(Seq(NumberToken(5.0), multiplication, NumberToken(1.0))) should equal (Product(Constant(5.0), Constant(1.0)))
-    assemble(Seq(VariableToken("x"), minus, NumberToken(1.0))) should equal (
+    assemble(number(5.0) :: plus :: number(1.0) :: Nil) should equal (Sum(Constant(5.0), Constant(1.0)))
+    assemble(variable("x") :: plus :: variable("y") :: Nil) should equal (Sum(Variable("x"), Variable("y")))
+    assemble(number(5.0) :: multiplication :: number(1.0) :: Nil) should equal (Product(Constant(5.0), Constant(1.0)))
+    assemble(variable("x") :: minus :: number(1.0) :: Nil) should equal (
       Sum(Variable("x"), Product(Constant(-1.0), Constant(1.0)))
     )
   }
 
   it should "handle precedence in infix expressions" in {
     import Tokens._
-    assemble(Seq(NumberToken(5.0), plus, NumberToken(1.0), multiplication, NumberToken(2.0))) should equal (
+    assemble(number(5.0) :: plus :: number(1.0) :: multiplication :: number(2.0) :: Nil) should equal (
       Sum(Constant(5.0), Product(Constant(1.0), Constant(2.0)))
     )
-    assemble(Seq(NumberToken(5.0), multiplication, NumberToken(1.0), plus, NumberToken(2.0))) should equal {
+    assemble(number(5.0) :: multiplication :: number(1.0) :: plus :: number(2.0) :: Nil) should equal {
       Sum(Product(Constant(5.0), Constant(1.0)), Constant(2.0))
     }
   }
